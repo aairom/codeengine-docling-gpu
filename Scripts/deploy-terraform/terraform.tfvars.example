@@ -1,0 +1,40 @@
+# ============================================================
+# DoclingGPU - Terraform Variables Example
+# Copy to terraform.tfvars and fill in your values
+# NEVER commit terraform.tfvars to git!
+# ============================================================
+
+# Required: IBM Cloud API key
+# Get from: https://cloud.ibm.com/iam/apikeys
+ibmcloud_api_key = "YOUR_IBM_CLOUD_API_KEY"
+
+# IBM Cloud region
+# Options: eu-de, us-south, us-east, eu-gb, jp-tok, au-syd, br-sao, ca-tor
+region = "eu-de"
+
+# Resource group
+resource_group = "default"
+
+# Prefix for all resource names (3-21 chars, lowercase)
+prefix = "doclinggpu"
+
+# Flask secret key (generate: openssl rand -hex 32)
+app_secret_key = "GENERATE_WITH_openssl_rand_hex_32"
+
+# Container registry
+registry_server    = "de.icr.io"
+registry_email     = "your@email.com"
+
+# Web app container image (after building and pushing)
+webapp_image = "de.icr.io/YOUR_NAMESPACE/doclinggpu-webapp:latest"
+
+# Scaling
+webapp_max_instances = 5
+fleet_max_scale_gpu  = 4
+fleet_max_scale_cpu  = 8
+
+# GPU type: l40s (faster init) or h100 (higher throughput)
+gpu_type = "l40s"
+
+# Tags
+tags = ["doclinggpu", "code-engine", "docling", "gpu", "production"]

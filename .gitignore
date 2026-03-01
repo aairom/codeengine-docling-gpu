@@ -1,0 +1,164 @@
+# ============================================================
+# DoclingGPU — .gitignore
+# Excludes private/generated content from version control
+# ============================================================
+
+# -------------------------------------------------------
+# IMPORTANT: Exclude all folders starting with underscore
+# -------------------------------------------------------
+_*/
+_*
+
+# -------------------------------------------------------
+# Python
+# -------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env.local
+.env.*.local
+
+# -------------------------------------------------------
+# Environment & Secrets (NEVER commit these)
+# -------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.env
+secrets.yaml
+secrets.json
+terraform.tfvars
+!terraform.tfvars.example
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+
+# IBM Cloud credentials
+ibmcloud-config/
+.ibmcloud/
+apikey.json
+*.apikey
+
+# -------------------------------------------------------
+# Docker
+# -------------------------------------------------------
+.dockerignore
+docker-compose.override.yml
+
+# -------------------------------------------------------
+# Output & Temporary Files
+# -------------------------------------------------------
+output/
+!output/.gitkeep
+/tmp/
+*.tmp
+*.temp
+*.log
+*.pid
+
+# Upload temp files
+uploads/
+/app/uploads/
+
+# -------------------------------------------------------
+# IDE & Editor Files
+# -------------------------------------------------------
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# -------------------------------------------------------
+# Testing & Coverage
+# -------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+nosetests.xml
+test-results/
+junit.xml
+
+# -------------------------------------------------------
+# Jupyter Notebooks
+# -------------------------------------------------------
+.ipynb_checkpoints
+*.ipynb
+
+# -------------------------------------------------------
+# Node.js (if any frontend tooling)
+# -------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# -------------------------------------------------------
+# Kubernetes
+# -------------------------------------------------------
+kubeconfig
+*.kubeconfig
+kube-config.yaml
+
+# -------------------------------------------------------
+# Miscellaneous
+# -------------------------------------------------------
+*.zip
+*.tar.gz
+*.tgz
+*.bak
+*.orig
+*.rej
+.cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/

@@ -1,0 +1,160 @@
+# ============================================================
+# DoclingGPU - Docker Compose for Local Development
+# ============================================================
+# Usage:
+#   Local mode (CPU):  docker compose up
+#   With GPU:          docker compose --profile gpu up
+#   Fleet simulation:  docker compose --profile fleet up
+# ============================================================
+
+version: '3.9'
+
+services:
+  # ============================================================
+  # Web Application
+  # ============================================================
+  webapp:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VERSION: ${VERSION:-1.0.0}
+    image: doclinggpu-webapp:latest
+    container_name: doclinggpu-webapp
+    ports:
+      - "8080:8080"
+    environment:
+      - PROCESSING_MODE=${PROCESSING_MODE:-local}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-prod}
+      - UPLOAD_FOLDER=/tmp/uploads
+      - OUTPUT_FOLDER=/tmp/outputs
+      - LOCAL_INPUT_FOLDER=/app/input
+      - LOCAL_OUTPUT_FOLDER=/app/output
+      - CE_REGION=${CE_REGION:-eu-de}
+      - CE_FLEET_TASK_STORE=${CE_FLEET_TASK_STORE:-fleet-task-store}
+      - CE_FLEET_SUBNETPOOL=${CE_FLEET_SUBNETPOOL:-fleet-subnetpool}
+      - CE_INPUT_STORE=${CE_INPUT_STORE:-fleet-input-store}
+      - CE_OUTPUT_STORE=${CE_OUTPUT_STORE:-fleet-output-store}
+      - CE_REGISTRY_SECRET=${CE_REGISTRY_SECRET:-fleet-registry-secret}
+      - DOCLING_GPU_IMAGE=${DOCLING_GPU_IMAGE:-quay.io/docling-project/docling-serve}
+      - DOCLING_CPU_IMAGE=${DOCLING_CPU_IMAGE:-quay.io/docling-project/docling-serve-cpu}
+      - DEBUG=${DEBUG:-false}
+      - PORT=8080
+    volumes:
+      - ./input:/app/input:ro
+      - ./output:/app/output
+      - uploads_tmp:/tmp/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - doclinggpu
+
+  # ============================================================
+  # CPU Worker (for local fleet simulation)
+  # ============================================================
+  worker-cpu:
+    image: quay.io/docling-project/docling-serve-cpu:latest
+    container_name: doclinggpu-worker-cpu
+    profiles:
+      - fleet
+      - cpu-worker
+    environment:
+      - DOCLING_DEVICE=cpu
+      - DOCLING_NUM_THREADS=4
+      - INPUT_DIR=/input
+      - OUTPUT_DIR=/output
+    volumes:
+      - ./input:/input:ro
+      - ./output:/output
+    command: >
+      docling
+      --num-threads 4
+      /input
+      --output /output
+    networks:
+      - doclinggpu
+
+  # ============================================================
+  # GPU Worker (requires NVIDIA Docker runtime)
+  # ============================================================
+  worker-gpu:
+    image: quay.io/docling-project/docling-serve:latest
+    container_name: doclinggpu-worker-gpu
+    profiles:
+      - gpu
+    environment:
+      - DOCLING_DEVICE=cuda
+      - DOCLING_NUM_THREADS=4
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+      - INPUT_DIR=/input
+      - OUTPUT_DIR=/output
+    volumes:
+      - ./input:/input:ro
+      - ./output:/output
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: >
+      docling
+      --num-threads 4
+      /input
+      --output /output
+    networks:
+      - doclinggpu
+
+  # ============================================================
+  # Custom GPU Worker (with our worker.py)
+  # ============================================================
+  worker-custom-gpu:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile.gpu
+    image: doclinggpu-worker-gpu:latest
+    container_name: doclinggpu-worker-custom-gpu
+    profiles:
+      - custom-gpu
+    environment:
+      - DOCLING_DEVICE=cuda
+      - DOCLING_NUM_THREADS=4
+      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+      - INPUT_DIR=/input
+      - OUTPUT_DIR=/output
+      - CE_TASK_INDEX=0
+    volumes:
+      - ./input:/input:ro
+      - ./output:/output
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - doclinggpu
+
+# ============================================================
+# Volumes
+# ============================================================
+volumes:
+  uploads_tmp:
+    driver: local
+
+# ============================================================
+# Networks
+# ============================================================
+networks:
+  doclinggpu:
+    driver: bridge
+
+# Made with Bob

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoclingGPU — IBM Code Engine Serverless Document Processing</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-brand">
+                <svg class="ibm-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" fill="#0F62FE"/>
+                    <text x="4" y="22" font-family="IBM Plex Sans" font-weight="700" font-size="14" fill="white">IBM</text>
+                </svg>
+                <span class="brand-name">DoclingGPU</span>
+                <span class="brand-tagline">Code Engine · Serverless Fleets · GPU on-demand</span>
+            </div>
+            <nav class="header-nav">
+                <a href="#upload" class="nav-link">Process</a>
+                <a href="#jobs" class="nav-link">Jobs</a>
+                <a href="#architecture" class="nav-link">Architecture</a>
+                <a href="https://github.com/IBM/CodeEngine" target="_blank" class="nav-link nav-link--external">
+                    GitHub ↗
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">IBM Cloud Code Engine</div>
+                <h1 class="hero-title">
+                    GPU-Accelerated<br>Document Processing
+                </h1>
+                <p class="hero-subtitle">
+                    Convert PDFs, DOCX, and more to structured Markdown using 
+                    <strong>Docling</strong> on IBM Cloud Code Engine Serverless Fleets 
+                    with on-demand GPU acceleration.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-value">L40s / H100</span>
+                        <span class="stat-label">GPU Options</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">Serverless</span>
+                        <span class="stat-label">Auto-scaling</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">Pay-per-use</span>
+                        <span class="stat-label">Cost model</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="pipeline-diagram">
+                    <div class="pipeline-step">
+                        <div class="step-icon">📄</div>
+                        <div class="step-label">Documents</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-step pipeline-step--highlight">
+                        <div class="step-icon">⚡</div>
+                        <div class="step-label">Code Engine Fleet</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-icon">🔥</div>
+                        <div class="step-label">GPU Workers</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-icon">📝</div>
+                        <div class="step-label">Markdown</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mode Banner -->
+    <div class="mode-banner">
+        <div class="container">
+            <span class="mode-label">Current Mode:</span>
+            <span class="mode-value mode-value--{{ processing_mode }}">
+                {% if processing_mode == 'local' %}🖥️ Local Processing
+                {% elif processing_mode == 'fleet-cpu' %}☁️ Fleet CPU ({{ ce_region }})
+                {% elif processing_mode == 'fleet-gpu' %}🔥 Fleet GPU ({{ ce_region }})
+                {% else %}{{ processing_mode }}{% endif %}
+            </span>
+            <span class="mode-hint">Set via <code>PROCESSING_MODE</code> environment variable</span>
+        </div>
+    </div>
+
+    <!-- Upload Section -->
+    <section id="upload" class="section">
+        <div class="container">
+            <h2 class="section-title">Process Documents</h2>
+            <p class="section-subtitle">Upload files or specify a folder path for batch processing</p>
+
+            <div class="upload-grid">
+                <!-- Upload Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📤 Upload Files</h3>
+                        <span class="card-badge">Drag & Drop</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="drop-zone" id="dropZone">
+                            <div class="drop-zone-content">
+                                <div class="drop-icon">📁</div>
+                                <p class="drop-text">Drag files here or <label for="fileInput" class="drop-link">browse</label></p>
+                                <p class="drop-hint">PDF, DOCX, PPTX, XLSX, HTML, MD, TXT, PNG, JPG, TIFF</p>
+                                <p class="drop-hint">Max 500MB per upload</p>
+                            </div>
+                            <input type="file" id="fileInput" multiple accept=".pdf,.docx,.pptx,.xlsx,.html,.md,.txt,.png,.jpg,.jpeg,.tiff" style="display:none">
+                        </div>
+                        <div id="fileList" class="file-list" style="display:none">
+                            <div class="file-list-header">
+                                <span id="fileCount">0 files selected</span>
+                                <button class="btn btn--ghost btn--sm" onclick="clearFiles()">Clear</button>
+                            </div>
+                            <ul id="fileItems"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Folder / Options Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⚙️ Processing Options</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Folder Path (batch mode)</label>
+                            <input type="text" id="folderPath" class="form-input" 
+                                   placeholder="/path/to/documents or ./input">
+                            <span class="form-hint">Leave empty to use uploaded files above</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Processing Mode</label>
+                            <div class="radio-group">
+                                <label class="radio-option">
+                                    <input type="radio" name="processingMode" value="local" 
+                                           {% if processing_mode == 'local' %}checked{% endif %}>
+                                    <span class="radio-label">
+                                        <span class="radio-icon">🖥️</span>
+                                        <span>
+                                            <strong>Local</strong>
+                                            <small>Process on this server</small>
+                                        </span>
+                                    </span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="processingMode" value="fleet-cpu"
+                                           {% if processing_mode == 'fleet-cpu' %}checked{% endif %}>
+                                    <span class="radio-label">
+                                        <span class="radio-icon">☁️</span>
+                                        <span>
+                                            <strong>Fleet CPU</strong>
+                                            <small>Code Engine mx3d-24x240</small>
+                                        </span>
+                                    </span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="processingMode" value="fleet-gpu"
+                                           {% if processing_mode == 'fleet-gpu' %}checked{% endif %}>
+                                    <span class="radio-label">
+                                        <span class="radio-icon">🔥</span>
+                                        <span>
+                                            <strong>Fleet GPU</strong>
+                                            <small>Code Engine gx3 L40s/H100</small>
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="gpuOptions" style="display:none">
+                            <label class="form-label">GPU Type</label>
+                            <select id="gpuType" class="form-select">
+                                <option value="l40s">NVIDIA L40s (48GB, fast init)</option>
+                                <option value="h100">NVIDIA H100 (80GB, high throughput)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Output Destination</label>
+                            <input type="text" id="outputDest" class="form-input" 
+                                   placeholder="./output (default)">
+                            <span class="form-hint">Local path or leave empty for default timestamped folder</span>
+                        </div>
+
+                        <button class="btn btn--primary btn--full" id="processBtn" onclick="startProcessing()">
+                            <span class="btn-icon">▶</span>
+                            Start Processing
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local Input Folder Quick Action -->
+            <div class="quick-action-bar">
+                <div class="quick-action-info">
+                    <span class="quick-icon">📂</span>
+                    <span>Process all files from <code>./input</code> folder</span>
+                </div>
+                <button class="btn btn--secondary" onclick="processLocalFolder()">
+                    Process ./input Folder
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Active Job Monitor -->
+    <section id="jobs" class="section section--dark">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Processing Jobs</h2>
+                <button class="btn btn--ghost btn--sm" onclick="refreshJobs()">↻ Refresh</button>
+            </div>
+
+            <div id="jobsContainer">
+                <div class="empty-state" id="emptyJobs">
+                    <div class="empty-icon">📋</div>
+                    <p>No jobs yet. Upload documents to get started.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section id="architecture" class="section">
+        <div class="container">
+            <h2 class="section-title">Architecture</h2>
+            <p class="section-subtitle">How DoclingGPU leverages IBM Code Engine Serverless Fleets</p>
+
+            <div class="arch-grid">
+                <div class="arch-card">
+                    <div class="arch-icon">🌐</div>
+                    <h3>Web Application</h3>
+                    <p>Flask app hosted on Code Engine as a serverless application. Handles uploads, job management, and result delivery.</p>
+                    <div class="arch-tech">Flask · Python · Code Engine App</div>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-card arch-card--highlight">
+                    <div class="arch-icon">⚡</div>
+                    <h3>Serverless Fleet</h3>
+                    <p>IBM Code Engine Serverless Fleets spawn workers on-demand. Tasks are distributed across workers automatically.</p>
+                    <div class="arch-tech">Code Engine Fleet · COS · Task Queue</div>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-card">
+                    <div class="arch-icon">🔥</div>
+                    <h3>GPU Workers</h3>
+                    <p>Docling runs on NVIDIA L40s or H100 GPUs for accelerated document processing. Workers auto-terminate when done.</p>
+                    <div class="arch-tech">Docling · NVIDIA L40s/H100 · Docker</div>
+                </div>
+            </div>
+
+            <div class="flow-diagram">
+                <h3>Processing Flow</h3>
+                <div class="flow-steps">
+                    <div class="flow-step">
+                        <div class="flow-num">1</div>
+                        <div class="flow-content">
+                            <strong>Upload</strong>
+                            <span>Documents uploaded to COS input bucket</span>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-num">2</div>
+                        <div class="flow-content">
+                            <strong>Queue</strong>
+                            <span>commands.jsonl generated with per-file tasks</span>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-num">3</div>
+                        <div class="flow-content">
+                            <strong>Fleet Launch</strong>
+                            <span>Code Engine fleet spawns GPU/CPU workers</span>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-num">4</div>
+                        <div class="flow-content">
+                            <strong>Process</strong>
+                            <span>Docling converts documents in parallel</span>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-num">5</div>
+                        <div class="flow-content">
+                            <strong>Download</strong>
+                            <span>Markdown results available for download</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <strong>DoclingGPU</strong>
+                    <p>IBM Code Engine · Serverless Fleets · Docling</p>
+                </div>
+                <div>
+                    <strong>Resources</strong>
+                    <ul>
+                        <li><a href="https://github.com/IBM/CodeEngine" target="_blank">IBM Code Engine GitHub</a></li>
+                        <li><a href="https://docling-project.github.io/docling/" target="_blank">Docling Documentation</a></li>
+                        <li><a href="https://cloud.ibm.com/docs/codeengine" target="_blank">Code Engine Docs</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong>API</strong>
+                    <ul>
+                        <li><a href="/health">Health Check</a></li>
+                        <li><a href="/config">Configuration</a></li>
+                        <li><a href="/jobs">Jobs API</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2025 IBM Corporation · Apache 2.0 License</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Job Progress Modal -->
+    <div class="modal" id="jobModal" style="display:none">
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Processing Job</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

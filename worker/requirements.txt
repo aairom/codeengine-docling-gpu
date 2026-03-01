@@ -1,0 +1,9 @@
+# Docling - Document AI processing
+docling>=2.15.0
+docling-core>=2.15.0
+
+# GPU acceleration (CUDA) - installed in base image for GPU workers
+# torch>=2.1.0  # Uncomment for CPU-only custom builds
+
+# Utilities
+python-dotenv>=1.0.0

@@ -1,0 +1,238 @@
+# ============================================================
+# DoclingGPU - Kubernetes Deployment Manifests
+# For non-Code Engine Kubernetes deployments
+# ============================================================
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: doclinggpu
+  labels:
+    app.kubernetes.io/name: doclinggpu
+    app.kubernetes.io/part-of: doclinggpu
+
+---
+# ConfigMap for non-sensitive configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: doclinggpu-config
+  namespace: doclinggpu
+  labels:
+    app.kubernetes.io/name: doclinggpu-webapp
+data:
+  PROCESSING_MODE: "local"
+  PORT: "8080"
+  UPLOAD_FOLDER: "/tmp/uploads"
+  OUTPUT_FOLDER: "/tmp/outputs"
+  LOCAL_INPUT_FOLDER: "/app/input"
+  LOCAL_OUTPUT_FOLDER: "/app/output"
+  DOCLING_GPU_IMAGE: "quay.io/docling-project/docling-serve"
+  DOCLING_CPU_IMAGE: "quay.io/docling-project/docling-serve-cpu"
+
+---
+# Secret for sensitive configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: doclinggpu-secrets
+  namespace: doclinggpu
+  labels:
+    app.kubernetes.io/name: doclinggpu-webapp
+type: Opaque
+stringData:
+  SECRET_KEY: "CHANGE_ME_generate_with_openssl_rand_hex_32"
+  # IBM Cloud credentials (for fleet mode)
+  # IBMCLOUD_API_KEY: "YOUR_API_KEY"
+
+---
+# PersistentVolumeClaim for output storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: doclinggpu-output-pvc
+  namespace: doclinggpu
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+# Web Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: doclinggpu-webapp
+  namespace: doclinggpu
+  labels:
+    app.kubernetes.io/name: doclinggpu-webapp
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: webapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: doclinggpu-webapp
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: doclinggpu-webapp
+        app.kubernetes.io/name: doclinggpu-webapp
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+
+      containers:
+        - name: webapp
+          image: YOUR_REGISTRY/doclinggpu-webapp:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: doclinggpu-config
+            - secretRef:
+                name: doclinggpu-secrets
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          volumeMounts:
+            - name: uploads
+              mountPath: /tmp/uploads
+            - name: output
+              mountPath: /app/output
+            - name: input
+              mountPath: /app/input
+              readOnly: true
+
+      volumes:
+        - name: uploads
+          emptyDir:
+            sizeLimit: 2Gi
+        - name: output
+          persistentVolumeClaim:
+            claimName: doclinggpu-output-pvc
+        - name: input
+          hostPath:
+            path: /data/doclinggpu/input
+            type: DirectoryOrCreate
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: doclinggpu-webapp
+  namespace: doclinggpu
+  labels:
+    app.kubernetes.io/name: doclinggpu-webapp
+spec:
+  selector:
+    app: doclinggpu-webapp
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+
+---
+# Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: doclinggpu-ingress
+  namespace: doclinggpu
+  labels:
+    app.kubernetes.io/name: doclinggpu-webapp
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Uncomment for TLS
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: doclinggpu.YOUR_DOMAIN.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: doclinggpu-webapp
+                port:
+                  number: 80
+  # Uncomment for TLS:
+  # tls:
+  #   - hosts:
+  #       - doclinggpu.YOUR_DOMAIN.com
+  #     secretName: doclinggpu-tls
+
+---
+# HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: doclinggpu-webapp-hpa
+  namespace: doclinggpu
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: doclinggpu-webapp
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+# Made with Bob

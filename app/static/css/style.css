@@ -1,0 +1,993 @@
+/* ============================================================
+   DoclingGPU - IBM Design System inspired styles
+   ============================================================ */
+
+:root {
+  --ibm-blue-60: #0043ce;
+  --ibm-blue-50: #0f62fe;
+  --ibm-blue-40: #4589ff;
+  --ibm-blue-10: #edf5ff;
+  --ibm-gray-100: #161616;
+  --ibm-gray-90: #262626;
+  --ibm-gray-80: #393939;
+  --ibm-gray-70: #525252;
+  --ibm-gray-50: #8d8d8d;
+  --ibm-gray-30: #c6c6c6;
+  --ibm-gray-20: #e0e0e0;
+  --ibm-gray-10: #f4f4f4;
+  --ibm-white: #ffffff;
+  --ibm-green-50: #24a148;
+  --ibm-green-10: #defbe6;
+  --ibm-red-50: #da1e28;
+  --ibm-red-10: #fff1f1;
+  --ibm-yellow-30: #f1c21b;
+  --ibm-yellow-10: #fcf4d6;
+  --ibm-purple-50: #8a3ffc;
+  --ibm-purple-10: #f6f2ff;
+
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.16);
+
+  --transition: 0.2s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ibm-gray-100);
+  background: var(--ibm-white);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
+.header {
+  background: var(--ibm-gray-100);
+  border-bottom: 1px solid var(--ibm-gray-80);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ibm-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ibm-white);
+  letter-spacing: -0.01em;
+}
+
+.brand-tagline {
+  font-size: 12px;
+  color: var(--ibm-gray-50);
+  font-family: var(--font-mono);
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .brand-tagline { display: block; }
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-link {
+  color: var(--ibm-gray-30);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition), background var(--transition);
+}
+
+.nav-link:hover {
+  color: var(--ibm-white);
+  background: var(--ibm-gray-80);
+}
+
+.nav-link--external { color: var(--ibm-blue-40); }
+
+/* ============================================================
+   Hero
+   ============================================================ */
+.hero {
+  background: linear-gradient(135deg, var(--ibm-gray-100) 0%, #1a1a2e 100%);
+  color: var(--ibm-white);
+  padding: 80px 0 60px;
+  overflow: hidden;
+}
+
+.hero .container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .hero .container { grid-template-columns: 1fr 1fr; }
+}
+
+.hero-badge {
+  display: inline-block;
+  background: var(--ibm-blue-50);
+  color: var(--ibm-white);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+
+.hero-title {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+
+.hero-subtitle {
+  font-size: 18px;
+  color: var(--ibm-gray-30);
+  line-height: 1.7;
+  margin-bottom: 40px;
+}
+
+.hero-subtitle strong { color: var(--ibm-blue-40); }
+
+.hero-stats {
+  display: flex;
+  gap: 32px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ibm-blue-40);
+  font-family: var(--font-mono);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--ibm-gray-50);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Pipeline diagram */
+.pipeline-diagram {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pipeline-step {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  text-align: center;
+  min-width: 100px;
+  transition: transform var(--transition);
+}
+
+.pipeline-step:hover { transform: translateY(-2px); }
+
+.pipeline-step--highlight {
+  background: rgba(15, 98, 254, 0.2);
+  border-color: var(--ibm-blue-50);
+}
+
+.step-icon { font-size: 28px; margin-bottom: 8px; }
+.step-label { font-size: 12px; color: var(--ibm-gray-30); font-weight: 500; }
+
+.pipeline-arrow {
+  color: var(--ibm-gray-50);
+  font-size: 20px;
+  font-weight: 300;
+}
+
+/* ============================================================
+   Mode Banner
+   ============================================================ */
+.mode-banner {
+  background: var(--ibm-gray-10);
+  border-bottom: 1px solid var(--ibm-gray-20);
+  padding: 12px 0;
+}
+
+.mode-banner .container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mode-label {
+  font-size: 13px;
+  color: var(--ibm-gray-70);
+  font-weight: 500;
+}
+
+.mode-value {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+.mode-value--local { background: var(--ibm-gray-20); color: var(--ibm-gray-80); }
+.mode-value--fleet-cpu { background: var(--ibm-blue-10); color: var(--ibm-blue-60); }
+.mode-value--fleet-gpu { background: #fff0e6; color: #b45309; }
+
+.mode-hint {
+  font-size: 12px;
+  color: var(--ibm-gray-50);
+}
+
+.mode-hint code {
+  font-family: var(--font-mono);
+  background: var(--ibm-gray-20);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* ============================================================
+   Sections
+   ============================================================ */
+.section {
+  padding: 64px 0;
+}
+
+.section--dark {
+  background: var(--ibm-gray-10);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.section-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.section-subtitle {
+  font-size: 16px;
+  color: var(--ibm-gray-70);
+  margin-bottom: 40px;
+}
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card {
+  background: var(--ibm-white);
+  border: 1px solid var(--ibm-gray-20);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--ibm-gray-20);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.card-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--ibm-blue-10);
+  color: var(--ibm-blue-60);
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.card-body {
+  padding: 24px;
+}
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .upload-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ============================================================
+   Drop Zone
+   ============================================================ */
+.drop-zone {
+  border: 2px dashed var(--ibm-gray-30);
+  border-radius: var(--radius-md);
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: var(--ibm-blue-50);
+  background: var(--ibm-blue-10);
+}
+
+.drop-icon { font-size: 40px; margin-bottom: 12px; }
+.drop-text { font-size: 15px; color: var(--ibm-gray-70); margin-bottom: 8px; }
+.drop-link { color: var(--ibm-blue-50); cursor: pointer; text-decoration: underline; }
+.drop-hint { font-size: 12px; color: var(--ibm-gray-50); margin-top: 4px; }
+
+/* File list */
+.file-list {
+  margin-top: 16px;
+}
+
+.file-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--ibm-gray-70);
+}
+
+.file-list ul {
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--ibm-gray-20);
+  border-radius: var(--radius-sm);
+}
+
+.file-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--ibm-gray-10);
+}
+
+.file-list li:last-child { border-bottom: none; }
+.file-list li .file-icon { font-size: 16px; }
+.file-list li .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-list li .file-size { color: var(--ibm-gray-50); font-size: 11px; font-family: var(--font-mono); }
+
+/* ============================================================
+   Forms
+   ============================================================ */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ibm-gray-80);
+  margin-bottom: 6px;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--ibm-gray-30);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ibm-gray-100);
+  background: var(--ibm-white);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+
+.form-input:focus,
+.form-select:focus {
+  border-color: var(--ibm-blue-50);
+  box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.15);
+}
+
+.form-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--ibm-gray-50);
+  margin-top: 4px;
+}
+
+/* Radio group */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+  margin-right: 10px;
+  accent-color: var(--ibm-blue-50);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--ibm-gray-20);
+  border-radius: var(--radius-sm);
+  flex: 1;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.radio-option:has(input:checked) .radio-label {
+  border-color: var(--ibm-blue-50);
+  background: var(--ibm-blue-10);
+}
+
+.radio-icon { font-size: 20px; }
+
+.radio-label strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.radio-label small {
+  display: block;
+  font-size: 12px;
+  color: var(--ibm-gray-50);
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: var(--ibm-blue-50);
+  color: var(--ibm-white);
+}
+
+.btn--primary:hover { background: var(--ibm-blue-60); }
+.btn--primary:disabled { background: var(--ibm-gray-30); cursor: not-allowed; }
+
+.btn--secondary {
+  background: var(--ibm-gray-100);
+  color: var(--ibm-white);
+}
+
+.btn--secondary:hover { background: var(--ibm-gray-80); }
+
+.btn--ghost {
+  background: transparent;
+  color: var(--ibm-blue-50);
+  border: 1px solid var(--ibm-blue-50);
+}
+
+.btn--ghost:hover { background: var(--ibm-blue-10); }
+
+.btn--full { width: 100%; justify-content: center; }
+.btn--sm { padding: 6px 12px; font-size: 13px; }
+.btn-icon { font-size: 16px; }
+
+/* ============================================================
+   Quick Action Bar
+   ============================================================ */
+.quick-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--ibm-gray-10);
+  border: 1px solid var(--ibm-gray-20);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.quick-action-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ibm-gray-70);
+}
+
+.quick-icon { font-size: 20px; }
+
+.quick-action-info code {
+  font-family: var(--font-mono);
+  background: var(--ibm-gray-20);
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+/* ============================================================
+   Jobs
+   ============================================================ */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--ibm-gray-50);
+}
+
+.empty-icon { font-size: 48px; margin-bottom: 16px; }
+
+.job-card {
+  background: var(--ibm-white);
+  border: 1px solid var(--ibm-gray-20);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.job-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.job-id {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ibm-gray-50);
+}
+
+.job-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--ibm-gray-70);
+  margin-bottom: 12px;
+}
+
+.job-meta span { display: flex; align-items: center; gap: 4px; }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status-badge--pending { background: var(--ibm-yellow-10); color: #92400e; }
+.status-badge--running,
+.status-badge--preparing,
+.status-badge--fleet_launching,
+.status-badge--fleet_running { background: var(--ibm-blue-10); color: var(--ibm-blue-60); }
+.status-badge--completed { background: var(--ibm-green-10); color: #065f46; }
+.status-badge--completed_with_errors { background: var(--ibm-yellow-10); color: #92400e; }
+.status-badge--failed { background: var(--ibm-red-10); color: var(--ibm-red-50); }
+
+.progress-bar {
+  height: 6px;
+  background: var(--ibm-gray-20);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--ibm-blue-50);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.progress-fill--completed { background: var(--ibm-green-50); }
+.progress-fill--failed { background: var(--ibm-red-50); }
+
+.job-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.job-log {
+  margin-top: 12px;
+  background: var(--ibm-gray-100);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ibm-gray-30);
+  line-height: 1.8;
+}
+
+.log-line--success { color: #6ee7b7; }
+.log-line--error { color: #fca5a5; }
+.log-line--info { color: var(--ibm-blue-40); }
+
+/* ============================================================
+   Architecture
+   ============================================================ */
+.arch-grid {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 48px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.arch-card {
+  background: var(--ibm-white);
+  border: 1px solid var(--ibm-gray-20);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  text-align: center;
+  flex: 1;
+  min-width: 200px;
+  max-width: 280px;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.arch-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.arch-card--highlight {
+  border-color: var(--ibm-blue-50);
+  background: var(--ibm-blue-10);
+}
+
+.arch-icon { font-size: 40px; margin-bottom: 16px; }
+
+.arch-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.arch-card p {
+  font-size: 14px;
+  color: var(--ibm-gray-70);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.arch-tech {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--ibm-blue-60);
+  background: var(--ibm-blue-10);
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.arch-arrow {
+  font-size: 24px;
+  color: var(--ibm-gray-50);
+  font-weight: 300;
+}
+
+/* Flow diagram */
+.flow-diagram {
+  background: var(--ibm-gray-10);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+}
+
+.flow-diagram h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.flow-steps {
+  display: flex;
+  gap: 0;
+  position: relative;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  min-width: 140px;
+  padding: 0 16px;
+  position: relative;
+}
+
+.flow-step:not(:last-child)::after {
+  content: '→';
+  position: absolute;
+  right: -8px;
+  top: 16px;
+  color: var(--ibm-gray-50);
+  font-size: 18px;
+}
+
+.flow-num {
+  width: 36px;
+  height: 36px;
+  background: var(--ibm-blue-50);
+  color: var(--ibm-white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.flow-content strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.flow-content span {
+  font-size: 12px;
+  color: var(--ibm-gray-70);
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+.footer {
+  background: var(--ibm-gray-100);
+  color: var(--ibm-gray-30);
+  padding: 48px 0 24px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.footer strong {
+  display: block;
+  color: var(--ibm-white);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.footer p {
+  font-size: 13px;
+  color: var(--ibm-gray-50);
+}
+
+.footer ul {
+  list-style: none;
+}
+
+.footer ul li {
+  margin-bottom: 8px;
+}
+
+.footer a {
+  color: var(--ibm-gray-30);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color var(--transition);
+}
+
+.footer a:hover { color: var(--ibm-blue-40); }
+
+.footer-bottom {
+  border-top: 1px solid var(--ibm-gray-80);
+  padding-top: 24px;
+  font-size: 12px;
+  color: var(--ibm-gray-50);
+  text-align: center;
+}
+
+/* ============================================================
+   Modal
+   ============================================================ */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  position: relative;
+  background: var(--ibm-white);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 640px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--ibm-gray-20);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 { font-size: 18px; font-weight: 700; }
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--ibm-gray-70);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+
+.modal-close:hover { background: var(--ibm-gray-10); }
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* ============================================================
+   Utilities
+   ============================================================ */
+.text-mono { font-family: var(--font-mono); }
+.text-sm { font-size: 13px; }
+.text-muted { color: var(--ibm-gray-50); }
+
+/* Spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--ibm-gray-20);
+  border-top-color: var(--ibm-blue-50);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Pulse animation for active jobs */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* Made with Bob */

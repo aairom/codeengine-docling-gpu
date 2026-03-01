@@ -1,0 +1,4 @@
+{"command": ["python", "worker.py", "--input", "/input/bob-docs_v3.pdf", "--output", "/output", "--mode", "gpu", "--task-index", "0"]}
+{"command": ["python", "worker.py", "--input", "/input/bob-shell-docs_v10.pdf", "--output", "/output", "--mode", "gpu", "--task-index", "1"]}
+
+// Made with Bob

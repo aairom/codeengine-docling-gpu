@@ -1,0 +1,15 @@
+# Web Framework
+flask>=3.0.0
+werkzeug>=3.0.0
+gunicorn>=21.2.0
+
+# Document Processing
+docling>=2.15.0
+docling-core>=2.15.0
+
+# Utilities
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Production extras
+gevent>=23.9.1
