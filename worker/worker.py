@@ -57,26 +57,19 @@ def detect_device():
 
 
 def build_converter(device: str):
-    """Build and configure the Docling DocumentConverter."""
+    """Build and configure the Docling DocumentConverter for all supported formats."""
     from docling.document_converter import DocumentConverter, PdfFormatOption
     from docling.datamodel.base_models import InputFormat
     from docling.datamodel.pipeline_options import (
         PdfPipelineOptions,
-        TableFormerMode,
         EasyOcrOptions,
-        TesseractOcrOptions,
     )
-    from docling.pipeline.standard_pdf_pipeline import StandardPdfPipeline
 
     logger.info(f"Building Docling converter (device={device}, ocr={ENABLE_OCR}, tables={ENABLE_TABLE_STRUCTURE})")
 
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = ENABLE_OCR
     pipeline_options.do_table_structure = ENABLE_TABLE_STRUCTURE
-
-    if ENABLE_TABLE_STRUCTURE:
-        pipeline_options.table_structure_options.mode = TableFormerMode.ACCURATE
-        pipeline_options.table_structure_options.do_cell_matching = True
 
     if ENABLE_OCR:
         # Use EasyOCR which supports GPU acceleration
@@ -92,7 +85,7 @@ def build_converter(device: str):
 
     # Set accelerator device
     try:
-        from docling.datamodel.pipeline_options import AcceleratorDevice, AcceleratorOptions
+        from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
         device_map = {
             'cuda': AcceleratorDevice.CUDA,
             'mps': AcceleratorDevice.MPS,
@@ -106,7 +99,19 @@ def build_converter(device: str):
     except ImportError:
         logger.warning("AcceleratorOptions not available in this Docling version")
 
+    # Accept ALL Docling-supported formats — format is auto-detected per file
     converter = DocumentConverter(
+        allowed_formats=[
+            InputFormat.PDF,
+            InputFormat.DOCX,
+            InputFormat.PPTX,
+            InputFormat.XLSX,
+            InputFormat.HTML,
+            InputFormat.MD,
+            InputFormat.ASCIIDOC,
+            InputFormat.CSV,
+            InputFormat.IMAGE,
+        ],
         format_options={
             InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
         }
@@ -209,25 +214,10 @@ def process_batch(input_files: list, output_dir: Path, device: str) -> dict:
     return summary
 
 
-def find_input_files(input_dir: Path, extensions: list | None = None) -> list:
-    """Find all processable files in the input directory."""
-    if extensions is None:
-        extensions = ['pdf', 'docx', 'pptx', 'xlsx', 'html', 'md', 'txt', 'png', 'jpg', 'jpeg', 'tiff']
-
-    files = []
-    for ext in extensions:
-        files.extend(sorted(input_dir.glob(f'**/*.{ext}')))
-        files.extend(sorted(input_dir.glob(f'**/*.{ext.upper()}')))
-
-    # Deduplicate while preserving order
-    seen = set()
-    unique_files = []
-    for f in files:
-        if f not in seen:
-            seen.add(f)
-            unique_files.append(f)
-
-    return unique_files
+def find_input_files(input_dir: Path) -> list:
+    """Find all files in the input directory. Docling auto-detects supported formats."""
+    # Collect every file recursively — Docling will skip unsupported formats gracefully
+    return sorted([p for p in input_dir.rglob('*') if p.is_file()])
 
 
 def main():

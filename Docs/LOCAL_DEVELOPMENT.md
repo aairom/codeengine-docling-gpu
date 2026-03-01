@@ -10,12 +10,13 @@
 2. [Quick Start](#2-quick-start)
 3. [Python Virtual Environment Setup](#3-python-virtual-environment-setup)
 4. [Docker Development Setup](#4-docker-development-setup)
-5. [GPU Setup (Optional)](#5-gpu-setup-optional)
-6. [Processing Documents Locally](#6-processing-documents-locally)
-7. [Development Workflow](#7-development-workflow)
-8. [Testing](#8-testing)
-9. [Configuration Reference](#9-configuration-reference)
-10. [Troubleshooting](#10-troubleshooting)
+5. [Running docling-serve Locally](#5-running-docling-serve-locally)
+6. [GPU Setup (Optional)](#6-gpu-setup-optional)
+7. [Processing Documents Locally](#7-processing-documents-locally)
+8. [Development Workflow](#8-development-workflow)
+9. [Testing](#9-testing)
+10. [Configuration Reference](#10-configuration-reference)
+11. [Troubleshooting](#11-troubleshooting)
 
 ---
 
@@ -134,8 +135,10 @@ pip install flake8 pytest pytest-cov black isort
 export FLASK_ENV=development
 export FLASK_DEBUG=1
 export SECRET_KEY="dev-secret-key-not-for-production"
-export LOCAL_INPUT_FOLDER="./input"
-export LOCAL_OUTPUT_FOLDER="./output"
+# Use absolute paths — the Flask app runs from ./app/, so relative paths
+# like ./input would resolve to ./app/input instead of the project root.
+export LOCAL_INPUT_FOLDER="$(pwd)/input"
+export LOCAL_OUTPUT_FOLDER="$(pwd)/output"
 export PORT=8080
 
 # Run Flask development server
@@ -162,12 +165,11 @@ python worker/worker.py \
   --output output/ \
   --mode cpu
 
-# Process all documents in a folder
+# Process all documents in a folder (all Docling-supported formats auto-detected)
 python worker/worker.py \
   --input input/ \
   --output output/ \
-  --mode cpu \
-  --extensions .pdf .docx .pptx
+  --mode cpu
 
 # With GPU (if available)
 python worker/worker.py \
@@ -251,7 +253,136 @@ LOCAL_OUTPUT_FOLDER=/app/output
 
 ---
 
-## 5. GPU Setup (Optional)
+## 5. Running docling-serve Locally
+
+[docling-serve](https://github.com/docling-project/docling-serve) is the containerised HTTP service that wraps the Docling library. It exposes a REST API for document conversion and is the **same image** used by the Code Engine fleet workers (`quay.io/docling-project/docling-serve` for GPU, `quay.io/docling-project/docling-serve-cpu` for CPU). Running it locally lets you test document conversion independently of the Flask web app or IBM Cloud.
+
+### What is docling-serve?
+
+| Component | Role |
+|-----------|------|
+| `docling-serve` (GPU) | Full Docling pipeline with CUDA acceleration — used by Code Engine GPU fleet |
+| `docling-serve-cpu` | CPU-only Docling pipeline — used by Code Engine CPU fleet |
+| `worker.py` | Thin wrapper around the Docling Python API — used for local processing mode |
+
+The `worker-cpu` and `worker-gpu` services in [`docker-compose.yml`](../docker-compose.yml) both use the docling-serve images directly.
+
+### Option A — Run via Docker Compose (Recommended)
+
+The [`docker-compose.yml`](../docker-compose.yml) already includes pre-configured docling-serve services:
+
+```bash
+# CPU worker (docling-serve-cpu image) — processes ./input → ./output
+docker compose --profile cpu-worker up worker-cpu
+
+# GPU worker (docling-serve image, requires NVIDIA runtime)
+docker compose --profile gpu up worker-gpu
+
+# Both webapp + CPU worker together
+docker compose --profile fleet up
+```
+
+The worker containers read from `./input` (mounted read-only at `/input`) and write results to `./output` (mounted at `/output`).
+
+### Option B — Run docling-serve Standalone (CPU)
+
+```bash
+# Pull the CPU image
+docker pull quay.io/docling-project/docling-serve-cpu:latest
+
+# Run the HTTP server on port 5001
+docker run --rm \
+  -p 5001:5001 \
+  -v "$(pwd)/input:/input:ro" \
+  -v "$(pwd)/output:/output" \
+  quay.io/docling-project/docling-serve-cpu:latest
+
+# The REST API is now available at http://localhost:5001
+# Check the API docs
+curl http://localhost:5001/docs
+```
+
+### Option C — Run docling-serve Standalone (GPU)
+
+```bash
+# Pull the GPU image
+docker pull quay.io/docling-project/docling-serve:latest
+
+# Run with NVIDIA GPU
+docker run --rm \
+  --gpus all \
+  -p 5001:5001 \
+  -e DOCLING_DEVICE=cuda \
+  -v "$(pwd)/input:/input:ro" \
+  -v "$(pwd)/output:/output" \
+  quay.io/docling-project/docling-serve:latest
+```
+
+### Convert a Document via the docling-serve REST API
+
+Once the server is running on port 5001:
+
+```bash
+# Convert a single PDF — returns JSON with markdown content
+curl -X POST http://localhost:5001/v1alpha/convert/file \
+  -F "files=@input/document.pdf" \
+  | python3 -m json.tool
+
+# Convert and save the markdown output
+curl -X POST http://localhost:5001/v1alpha/convert/file \
+  -F "files=@input/document.pdf" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for doc in data.get('documents', []):
+    print(doc.get('markdown', ''))
+" > output/document.md
+
+# Convert with explicit options (e.g. disable OCR)
+curl -X POST http://localhost:5001/v1alpha/convert/file \
+  -F "files=@input/document.pdf" \
+  -F 'options={"do_ocr": false}' \
+  | python3 -m json.tool
+```
+
+### Batch Convert via CLI (using the docling CLI inside the container)
+
+The docling-serve images also ship the `docling` CLI, which is what the fleet workers invoke via `commands.jsonl`:
+
+```bash
+# Run the docling CLI directly inside the CPU container
+docker run --rm \
+  -v "$(pwd)/input:/input:ro" \
+  -v "$(pwd)/output:/output" \
+  quay.io/docling-project/docling-serve-cpu:latest \
+  docling --num-threads 4 /input --output /output
+
+# Run with GPU
+docker run --rm \
+  --gpus all \
+  -v "$(pwd)/input:/input:ro" \
+  -v "$(pwd)/output:/output" \
+  quay.io/docling-project/docling-serve:latest \
+  docling --num-threads 4 /input --output /output
+```
+
+### Relationship to the Flask Web App
+
+When the Flask app runs in **local mode**, it calls the Docling Python API directly via [`worker.py`](../worker/worker.py) — it does **not** call docling-serve's HTTP API. When the app runs in **fleet-cpu** or **fleet-gpu** mode, it launches Code Engine fleet workers that use the docling-serve container images and invoke the `docling` CLI.
+
+```
+Local mode:   Flask app → worker.py → Docling Python API
+Fleet mode:   Flask app → ibmcloud ce fleet → docling-serve container → docling CLI
+```
+
+Running docling-serve locally is useful for:
+- Testing document conversion without the Flask app
+- Debugging fleet worker behaviour before deploying to IBM Cloud
+- Integrating with other tools via the REST API
+
+---
+
+## 6. GPU Setup (Optional)
 
 ### NVIDIA GPU Setup (Linux)
 
@@ -322,7 +453,7 @@ python worker/worker.py \
 
 ---
 
-## 6. Processing Documents Locally
+## 7. Processing Documents Locally
 
 ### Via Web UI
 
@@ -348,16 +479,10 @@ python worker/worker.py \
   --input input/report.pdf \
   --output output/
 
-# Entire folder
+# Entire folder (all Docling-supported formats are processed automatically)
 python worker/worker.py \
   --input input/ \
   --output output/
-
-# Specific file types
-python worker/worker.py \
-  --input input/ \
-  --output output/ \
-  --extensions .pdf .docx
 
 # Force GPU mode
 python worker/worker.py \
@@ -407,7 +532,7 @@ Content extracted from the PDF...
 
 ---
 
-## 7. Development Workflow
+## 8. Development Workflow
 
 ### Project Structure for Development
 
@@ -487,7 +612,7 @@ git push origin feature/my-feature
 
 ---
 
-## 8. Testing
+## 9. Testing
 
 ### Unit Tests
 
@@ -558,7 +683,7 @@ ls results/
 
 ---
 
-## 9. Configuration Reference
+## 10. Configuration Reference
 
 ### Flask Application (`app/app.py`)
 
@@ -568,8 +693,8 @@ ls results/
 | `SECRET_KEY` | auto | Flask session secret |
 | `UPLOAD_FOLDER` | `/tmp/uploads` | Temp upload directory |
 | `OUTPUT_FOLDER` | `/tmp/outputs` | Temp output directory |
-| `LOCAL_INPUT_FOLDER` | `./input` | Local input folder |
-| `LOCAL_OUTPUT_FOLDER` | `./output` | Local output folder |
+| `LOCAL_INPUT_FOLDER` | `./input` | Local input folder — use an absolute path when running manually (the Flask app runs from `./app/`, so relative paths resolve relative to that directory) |
+| `LOCAL_OUTPUT_FOLDER` | `./output` | Local output folder — same absolute path recommendation applies |
 | `PROCESSING_MODE` | `local` | Default processing mode |
 | `MAX_CONTENT_LENGTH` | `500MB` | Max upload size |
 
@@ -577,10 +702,9 @@ ls results/
 
 | Argument | Default | Description |
 |----------|---------|-------------|
-| `--input` | required | Input file or folder |
+| `--input` | required | Input file or folder — all Docling-supported formats are detected automatically |
 | `--output` | required | Output folder |
 | `--mode` | `auto` | `auto`, `cpu`, `gpu` |
-| `--extensions` | `.pdf .docx .pptx .xlsx` | File types to process |
 | `--task-index` | `0` | Fleet task index |
 | `--verbose` | `false` | Verbose logging |
 
@@ -594,7 +718,7 @@ ls results/
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 ### Port Already in Use
 

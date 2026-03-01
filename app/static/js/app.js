@@ -49,17 +49,8 @@ fileInput.addEventListener('change', (e) => {
 });
 
 function addFiles(files) {
-  const allowed = ['pdf', 'docx', 'pptx', 'xlsx', 'html', 'md', 'txt', 'png', 'jpg', 'jpeg', 'tiff'];
-  const validFiles = files.filter(f => {
-    const ext = f.name.split('.').pop().toLowerCase();
-    return allowed.includes(ext);
-  });
-
-  if (validFiles.length < files.length) {
-    showNotification(`${files.length - validFiles.length} file(s) skipped (unsupported format)`, 'warning');
-  }
-
-  state.selectedFiles = [...state.selectedFiles, ...validFiles];
+  // Accept all files — Docling auto-detects format on the server side.
+  state.selectedFiles = [...state.selectedFiles, ...files];
   renderFileList();
 }
 
@@ -224,7 +215,11 @@ async function processLocalFolder() {
 // ============================================================
 
 function addJobToUI(jobData) {
-  state.activeJobs[jobData.job_id] = jobData;
+  // Normalize: upload/local-process responses use job_id; /job/<id> responses use id.
+  // Ensure both fields are always present so renderJobCard (which uses job.id) works.
+  const id = jobData.id || jobData.job_id;
+  const normalized = { ...jobData, id, job_id: id };
+  state.activeJobs[id] = normalized;
   renderJobs();
 }
 
@@ -392,7 +387,9 @@ async function refreshJobs() {
     const response = await fetch('/jobs');
     const jobs = await response.json();
     jobs.forEach(job => {
-      state.activeJobs[job.id] = job;
+      // Normalize id/job_id for consistency
+      const id = job.id || job.job_id;
+      state.activeJobs[id] = { ...job, id, job_id: id };
     });
     renderJobs();
   } catch (err) {

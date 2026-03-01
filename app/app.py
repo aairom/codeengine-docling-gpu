@@ -32,7 +32,6 @@ OUTPUT_FOLDER = os.getenv('OUTPUT_FOLDER', '/tmp/outputs')
 LOCAL_INPUT_FOLDER = os.getenv('LOCAL_INPUT_FOLDER', './input')
 LOCAL_OUTPUT_FOLDER = os.getenv('LOCAL_OUTPUT_FOLDER', './output')
 MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', str(500 * 1024 * 1024)))  # 500MB default
-ALLOWED_EXTENSIONS = {'pdf', 'docx', 'pptx', 'xlsx', 'html', 'md', 'txt', 'png', 'jpg', 'jpeg', 'tiff'}
 
 # IBM Cloud Code Engine / Fleet configuration
 CE_PROJECT_ID = os.getenv('CE_PROJECT_ID', '')
@@ -59,11 +58,6 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 # Ensure directories exist
 for folder in [UPLOAD_FOLDER, OUTPUT_FOLDER, LOCAL_INPUT_FOLDER, LOCAL_OUTPUT_FOLDER]:
     Path(folder).mkdir(parents=True, exist_ok=True)
-
-
-def allowed_file(filename):
-    """Check if file extension is allowed."""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def get_timestamp():
@@ -104,18 +98,29 @@ def process_local(job_id, input_files, output_dir):
     """Process documents locally using Docling."""
     try:
         update_job(job_id, status='running', log=['Starting local Docling processing...'])
-        
-        from docling.document_converter import DocumentConverter
+
+        from docling.document_converter import DocumentConverter, PdfFormatOption
         from docling.datamodel.base_models import InputFormat
         from docling.datamodel.pipeline_options import PdfPipelineOptions
-        from docling.document_converter import PdfFormatOption
-        
-        # Configure pipeline options
+
+        # Configure PDF pipeline options (OCR + table structure)
         pipeline_options = PdfPipelineOptions()
         pipeline_options.do_ocr = True
         pipeline_options.do_table_structure = True
-        
+
+        # Build converter accepting ALL Docling-supported formats
         converter = DocumentConverter(
+            allowed_formats=[
+                InputFormat.PDF,
+                InputFormat.DOCX,
+                InputFormat.PPTX,
+                InputFormat.XLSX,
+                InputFormat.HTML,
+                InputFormat.MD,
+                InputFormat.ASCIIDOC,
+                InputFormat.CSV,
+                InputFormat.IMAGE,
+            ],
             format_options={
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
             }
@@ -330,25 +335,26 @@ def upload_files():
         input_files = []
         timestamp = get_timestamp()
         
-        # Handle file uploads
+        # Handle file uploads — accept all files, Docling detects format automatically
         if 'files' in request.files:
             files = request.files.getlist('files')
             upload_dir = Path(UPLOAD_FOLDER) / job_id
             upload_dir.mkdir(parents=True, exist_ok=True)
-            
+
             for file in files:
-                if file and file.filename and allowed_file(file.filename):
+                if file and file.filename:
                     filename = secure_filename(file.filename)
                     file_path = upload_dir / filename
                     file.save(str(file_path))
                     input_files.append(str(file_path))
         
-        # Handle folder path (local mode)
+        # Handle folder path — collect all files, Docling detects format automatically
         if 'folder_path' in request.form and request.form['folder_path']:
             folder_path = Path(request.form['folder_path'])
             if folder_path.exists() and folder_path.is_dir():
-                for ext in ALLOWED_EXTENSIONS:
-                    input_files.extend([str(p) for p in folder_path.glob(f'**/*.{ext}')])
+                for p in sorted(folder_path.rglob('*')):
+                    if p.is_file():
+                        input_files.append(str(p))
             else:
                 return jsonify({'error': f'Folder not found: {folder_path}'}), 400
         
@@ -471,9 +477,8 @@ def process_local_folder():
         if not input_dir.exists():
             return jsonify({'error': f'Input folder not found: {LOCAL_INPUT_FOLDER}'}), 400
         
-        input_files = []
-        for ext in ALLOWED_EXTENSIONS:
-            input_files.extend([str(p) for p in input_dir.glob(f'**/*.{ext}')])
+        # Collect all files — Docling auto-detects format, no extension filtering needed
+        input_files = [str(p) for p in sorted(input_dir.rglob('*')) if p.is_file()]
         
         if not input_files:
             return jsonify({'error': f'No supported files found in {LOCAL_INPUT_FOLDER}'}), 400
@@ -541,7 +546,7 @@ def get_config():
     return jsonify({
         'processing_mode': PROCESSING_MODE,
         'ce_region': CE_REGION,
-        'allowed_extensions': list(ALLOWED_EXTENSIONS),
+        'allowed_formats': ['pdf', 'docx', 'pptx', 'xlsx', 'html', 'md', 'asciidoc', 'csv', 'png', 'jpg', 'jpeg', 'tiff', 'bmp', 'webp'],
         'max_file_size_mb': MAX_CONTENT_LENGTH // (1024 * 1024),
         'docling_gpu_image': DOCLING_GPU_IMAGE,
         'docling_cpu_image': DOCLING_CPU_IMAGE,
