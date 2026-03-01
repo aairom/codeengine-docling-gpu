@@ -134,8 +134,10 @@ pip install flake8 pytest pytest-cov black isort
 export FLASK_ENV=development
 export FLASK_DEBUG=1
 export SECRET_KEY="dev-secret-key-not-for-production"
-export LOCAL_INPUT_FOLDER="./input"
-export LOCAL_OUTPUT_FOLDER="./output"
+# Use absolute paths — the Flask app runs from ./app/, so relative paths
+# like ./input would resolve to ./app/input instead of the project root.
+export LOCAL_INPUT_FOLDER="$(pwd)/input"
+export LOCAL_OUTPUT_FOLDER="$(pwd)/output"
 export PORT=8080
 
 # Run Flask development server
@@ -162,12 +164,11 @@ python worker/worker.py \
   --output output/ \
   --mode cpu
 
-# Process all documents in a folder
+# Process all documents in a folder (all Docling-supported formats auto-detected)
 python worker/worker.py \
   --input input/ \
   --output output/ \
-  --mode cpu \
-  --extensions .pdf .docx .pptx
+  --mode cpu
 
 # With GPU (if available)
 python worker/worker.py \
@@ -348,16 +349,10 @@ python worker/worker.py \
   --input input/report.pdf \
   --output output/
 
-# Entire folder
+# Entire folder (all Docling-supported formats are processed automatically)
 python worker/worker.py \
   --input input/ \
   --output output/
-
-# Specific file types
-python worker/worker.py \
-  --input input/ \
-  --output output/ \
-  --extensions .pdf .docx
 
 # Force GPU mode
 python worker/worker.py \
@@ -568,8 +563,8 @@ ls results/
 | `SECRET_KEY` | auto | Flask session secret |
 | `UPLOAD_FOLDER` | `/tmp/uploads` | Temp upload directory |
 | `OUTPUT_FOLDER` | `/tmp/outputs` | Temp output directory |
-| `LOCAL_INPUT_FOLDER` | `./input` | Local input folder |
-| `LOCAL_OUTPUT_FOLDER` | `./output` | Local output folder |
+| `LOCAL_INPUT_FOLDER` | `./input` | Local input folder — use an absolute path when running manually (the Flask app runs from `./app/`, so relative paths resolve relative to that directory) |
+| `LOCAL_OUTPUT_FOLDER` | `./output` | Local output folder — same absolute path recommendation applies |
 | `PROCESSING_MODE` | `local` | Default processing mode |
 | `MAX_CONTENT_LENGTH` | `500MB` | Max upload size |
 
@@ -577,10 +572,9 @@ ls results/
 
 | Argument | Default | Description |
 |----------|---------|-------------|
-| `--input` | required | Input file or folder |
+| `--input` | required | Input file or folder — all Docling-supported formats are detected automatically |
 | `--output` | required | Output folder |
 | `--mode` | `auto` | `auto`, `cpu`, `gpu` |
-| `--extensions` | `.pdf .docx .pptx .xlsx` | File types to process |
 | `--task-index` | `0` | Fleet task index |
 | `--verbose` | `false` | Verbose logging |
 

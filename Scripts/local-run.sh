@@ -85,8 +85,8 @@ run_local() {
     # Set environment variables
     export PROCESSING_MODE=local
     export PORT="$PORT"
-    export LOCAL_INPUT_FOLDER="$INPUT_DIR"
-    export LOCAL_OUTPUT_FOLDER="$OUTPUT_DIR"
+    export LOCAL_INPUT_FOLDER="$(cd "$INPUT_DIR" && pwd)"
+    export LOCAL_OUTPUT_FOLDER="$(mkdir -p "$OUTPUT_DIR" && cd "$OUTPUT_DIR" && pwd)"
     export UPLOAD_FOLDER=/tmp/doclinggpu-uploads
     export OUTPUT_FOLDER=/tmp/doclinggpu-outputs
     export DEBUG=true

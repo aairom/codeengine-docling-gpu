@@ -126,12 +126,11 @@ Returns the current application configuration (non-sensitive values only).
 ```json
 {
   "processing_mode": "local",
-  "gpu_profile": "gx3-24x120x1l40s",
-  "max_instances": 10,
-  "max_upload_size_mb": 500,
-  "supported_extensions": [".pdf", ".docx", ".pptx", ".xlsx", ".html", ".md"],
-  "cos_configured": true,
-  "ibmcloud_configured": true,
+  "ce_region": "eu-de",
+  "allowed_formats": ["pdf", "docx", "pptx", "xlsx", "html", "md", "asciidoc", "csv", "png", "jpg", "jpeg", "tiff", "bmp", "webp"],
+  "max_file_size_mb": 500,
+  "docling_gpu_image": "quay.io/docling-project/docling-serve",
+  "docling_cpu_image": "quay.io/docling-project/docling-serve-cpu",
   "local_input_folder": "./input",
   "local_output_folder": "./output"
 }
@@ -226,20 +225,18 @@ Process documents from a local folder path (server-side folder).
 ```json
 {
   "folder_path": "./input",
-  "mode": "local",
-  "output_path": "./output",
-  "extensions": [".pdf", ".docx"],
-  "recursive": false
+  "processing_mode": "local",
+  "gpu_enabled": false
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `folder_path` | string | Yes | Path to folder containing documents |
-| `mode` | string | No | Processing mode (default: `local`) |
-| `output_path` | string | No | Output folder path (default: `./output`) |
-| `extensions` | string[] | No | File extensions to process |
-| `recursive` | boolean | No | Process subfolders (default: `false`) |
+| `folder_path` | string | No | Path to folder containing documents (defaults to `LOCAL_INPUT_FOLDER`) |
+| `processing_mode` | string | No | Processing mode: `local`, `fleet-cpu`, `fleet-gpu` (default: `local`) |
+| `gpu_enabled` | boolean | No | Enable GPU acceleration for fleet mode (default: `false`) |
+
+> **Note:** All file types supported by Docling are accepted automatically. Format detection is handled by Docling — no extension filtering is applied.
 
 **Response `202 Accepted`:**
 
@@ -267,22 +264,19 @@ Process documents from a local folder path (server-side folder).
 **Example:**
 
 ```bash
-# Process local input folder
+# Process local input folder (uses LOCAL_INPUT_FOLDER env var path)
 curl -X POST http://localhost:8080/local/process \
   -H "Content-Type: application/json" \
   -d '{
-    "folder_path": "./input",
-    "mode": "local",
-    "output_path": "./output"
+    "processing_mode": "local"
   }'
 
 # Process with fleet GPU
 curl -X POST http://localhost:8080/local/process \
   -H "Content-Type: application/json" \
   -d '{
-    "folder_path": "./input",
-    "mode": "fleet-gpu",
-    "extensions": [".pdf"]
+    "processing_mode": "fleet-gpu",
+    "gpu_enabled": true
   }'
 ```
 
@@ -587,7 +581,7 @@ curl -X POST http://localhost:8080/fleet/cancel/doclinggpu-fleet-abc123
 | `NO_FILES` | 400 | No files provided in upload request |
 | `INVALID_MODE` | 400 | Invalid processing mode specified |
 | `FILE_TOO_LARGE` | 413 | File exceeds maximum size limit |
-| `UNSUPPORTED_FORMAT` | 415 | File format not supported |
+| `UNSUPPORTED_FORMAT` | 415 | File format not supported by Docling |
 | `FOLDER_NOT_FOUND` | 400 | Specified folder path does not exist |
 | `JOB_NOT_FOUND` | 404 | Job ID does not exist |
 | `JOB_NOT_COMPLETED` | 409 | Job is still running (download not available) |
